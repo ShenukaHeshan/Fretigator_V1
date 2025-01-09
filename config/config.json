@@ -1,0 +1,38 @@
+{
+    "nodeId": 0,
+    "devices": {
+      "mixingPumpRelay": { "deviceId": 0, "currentNodeId": 0 },
+      "mixingSolenoidRelay": { "deviceId": 0, "currentNodeId": 0 },
+      "freshWaterPumpRelay": { "deviceId": 0, "currentNodeId": 0 },
+      "freshWaterSolenoidRelay": { "deviceId": 0, "currentNodeId": 0 },
+      "drainSolenoidRelay": { "deviceId": 0, "currentNodeId": 0 },
+      "manifoldSolenoidRelay": { "deviceId": 0, "currentNodeId": 0 }
+    },
+    "sensors": {
+      "mixingFlowMeterSensorId": 0,
+      "mixingTankLevelSensorId": 0,
+      "freshwaterTankLevelSensorId": 0,
+      "ecSensorId": 0,
+      "phSensorId": 0
+    },
+    "sensorConfig": {
+      "31": {
+        "maxHistoryLength": 30,
+        "minVariance": 5
+      },
+      "11": {
+        "maxHistoryLength": 30,
+        "minVariance": 0.00005
+      },
+      "12": {
+        "maxHistoryLength": 30,
+        "minVariance": 0.0005
+      },
+      "6": {
+        "maxHistoryLength": 30,
+        "minVariance": 0
+      }
+    },
+    "customRelaySettings": []
+}
+  
