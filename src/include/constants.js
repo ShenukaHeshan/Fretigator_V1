@@ -1,4 +1,4 @@
-import config from "../../config/config.json" assert { type: "json" };
+import config from "../../config/config.js";
 
 // Assign NODE_ID
 global.NODE_ID = config.nodeId;
@@ -45,7 +45,7 @@ global.mixingTankDrainLevel = 10;
 global.TURNON = 0;
 global.TURNOFF = 1;
 global.REFRESH_RATE = 100;
-global.FILE_INI = "/home/pi/AiGrow-Device/ini/fertigator.ini";
+global.FILE_INI = "/home/pi/AiGrow-Device-New/ini/fertigator.ini";
 
 // States
 global.DEFAULT_STATE = 0;

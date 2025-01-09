@@ -75,30 +75,38 @@ class ExternalNode {
         }
     }
 
-    stopAll(){
+    stopAll() {
         this.relaySetArray = Array(12).fill(0);
         this.sendHeartBeat();
     }
 
     userSet(deviceId, value) {
-
         const index = this.getRelayIndex(deviceId);
         if (index == -1) {
             CF.ErrorLog(`Invalid device ID ${deviceId} or value ${value}.`);
             return;
         }
 
+        const relayDevice = this.node.deviceArray[index];
+
+        const updateRelayDevice = (value, action) => {
+            relayDevice.userInvolveValue = value;
+            relayDevice.userInvolveTime = new Date();
+            this.relaySwitchExternalWrapper(deviceId, action);
+        };
+
         if (value == "on") {
-            this.relaySwitchExternalWrapper(deviceId, TURNON);
+            updateRelayDevice(value, TURNON);
         } else if (value == "off") {
-            this.relaySwitchExternalWrapper(deviceId, TURNOFF);
-        } else if (value == "auto" && this.node.deviceArray[index].remoteEnable == 1) {
-            this.relaySwitchExternalWrapper(deviceId, TURNOFF);
-            this.rescheduleRelay(this.node.deviceArray[index]);
+            updateRelayDevice(value, TURNOFF);
+        } else if (value == "auto" && relayDevice.remoteEnable == 1) {
+            updateRelayDevice(value, TURNOFF);
+            this.rescheduleRelay(relayDevice);
         }
 
         this.sendHeartBeat();
     }
+
 
     rescheduleRelay(device) {
         if (this.relaySchedule) {
@@ -108,10 +116,10 @@ class ExternalNode {
 
     initialize() {
         this.node.deviceArray.forEach((device) => {
-            
+
             device.sensorValue = device.sensorValue ?? 0;
-        
-             this.node.deviceArray.forEach((device) => {
+
+            this.node.deviceArray.forEach((device) => {
                 if (device.userInvolveValue == "on") {
                     this.relaySwitchExternalWrapper(device.deviceID, TURNON);
                 } else if (device.userInvolveValue == "off") {

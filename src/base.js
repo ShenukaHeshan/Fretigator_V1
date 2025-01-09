@@ -523,13 +523,20 @@ setInterval(() => {
                                 if (data.command == "USERSET") {
                                     const relayIndex = getRelayIndex(data.device_id);
                                     if (relayIndex == -1) return;
-
+                                
+                                    const updateRelayDevice = (value, action) => {
+                                        const relay = AigrowJson.deviceArray[relayIndex];
+                                        relay.userInvolveValue = value;
+                                        relay.userInvolveTime = new Date();
+                                        relaySwitchExternalWrapper(relayIndex, action);
+                                    };
+                                
                                     if (data.value == "on") {
-                                        relaySwitchExternalWrapper(relayIndex, TURNON);
+                                        updateRelayDevice(data.value, TURNON);
                                     } else if (data.value == "off") {
-                                        relaySwitchExternalWrapper(relayIndex, TURNOFF);
+                                        updateRelayDevice(data.value, TURNOFF);
                                     } else if (data.value == "auto" && AiGrowJson.deviceArray[relayIndex].remoteEnable == 1) {
-                                        relaySwitchExternalWrapper(relayIndex, TURNOFF);
+                                        updateRelayDevice(data.value, TURNOFF);
                                         relaySchedule.reschedule(AiGrowJson.deviceArray[relayIndex]);
                                     }
                                 } else if (data.command == "FERTIGATE") {
