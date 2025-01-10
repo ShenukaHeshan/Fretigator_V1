@@ -531,9 +531,9 @@ setInterval(() => {
                                         relaySwitchExternalWrapper(relayIndex, action);
                                     };
                                 
-                                    if (data.value == "on") {
+                                    if (data.value == "on" && AiGrowJson.deviceArray[relayIndex].remoteEnable == 1) {
                                         updateRelayDevice(data.value, TURNON);
-                                    } else if (data.value == "off") {
+                                    } else if (data.value == "off" && AiGrowJson.deviceArray[relayIndex].remoteEnable == 1) {
                                         updateRelayDevice(data.value, TURNOFF);
                                     } else if (data.value == "auto" && AiGrowJson.deviceArray[relayIndex].remoteEnable == 1) {
                                         updateRelayDevice(data.value, TURNOFF);
@@ -2310,9 +2310,9 @@ function updateAiGrowJson(newData, existingData) {
 
     // Synchronize deviceArray values
     newData.deviceArray.forEach((newDevice, index) => {
-        if (newDevice.userInvolveValue == "on") {
+        if (newDevice.userInvolveValue == "on" && newDevice.remoteEnable == 1) {
             relaySwitchExternalWrapper(index, TURNON);
-        } else if (newDevice.userInvolveValue == "off") {
+        } else if (newDevice.userInvolveValue == "off" && newDevice.remoteEnable == 1) {
             relaySwitchExternalWrapper(index, TURNOFF);
         } else if (newDevice.userInvolveValue == "auto" && newDevice.remoteEnable == 1) {
             relaySwitchExternalWrapper(index, TURNOFF);

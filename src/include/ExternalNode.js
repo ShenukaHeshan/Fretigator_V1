@@ -44,9 +44,9 @@ class ExternalNode {
             const index = this.getRelayIndex(device.deviceID);
             device.sensorValue = index > -1 ? (this.node.deviceArray[index].sensorValue || 0) : 0;
 
-            if (device.userInvolveValue == "on") {
+            if (device.userInvolveValue == "on" && device.remoteEnable == 1) {
                 this.relaySwitchExternalWrapper(device.deviceID, TURNON);
-            } else if (device.userInvolveValue == "off") {
+            } else if (device.userInvolveValue == "off" && device.remoteEnable == 1) {
                 this.relaySwitchExternalWrapper(device.deviceID, TURNOFF);
             } else if (device.userInvolveValue == "auto" && device.remoteEnable == 1) {
                 this.relaySwitchExternalWrapper(device.deviceID, TURNOFF);
@@ -95,9 +95,9 @@ class ExternalNode {
             this.relaySwitchExternalWrapper(deviceId, action);
         };
 
-        if (value == "on") {
+        if (value == "on" && relayDevice.remoteEnable == 1) {
             updateRelayDevice(value, TURNON);
-        } else if (value == "off") {
+        } else if (value == "off" && relayDevice.remoteEnable == 1) {
             updateRelayDevice(value, TURNOFF);
         } else if (value == "auto" && relayDevice.remoteEnable == 1) {
             updateRelayDevice(value, TURNOFF);
@@ -120,16 +120,15 @@ class ExternalNode {
             device.sensorValue = device.sensorValue ?? 0;
 
             this.node.deviceArray.forEach((device) => {
-                if (device.userInvolveValue == "on") {
+                if (device.userInvolveValue == "on"  && device.remoteEnable == 1) {
                     this.relaySwitchExternalWrapper(device.deviceID, TURNON);
-                } else if (device.userInvolveValue == "off") {
+                } else if (device.userInvolveValue == "off"  && device.remoteEnable == 1) {
                     this.relaySwitchExternalWrapper(device.deviceID, TURNOFF);
                 } else if (device.userInvolveValue == "auto" && device.remoteEnable == 1) {
                     this.relaySwitchExternalWrapper(device.deviceID, TURNOFF);
                     this.rescheduleRelay(device);
                 }
             });
-
         });
 
         this.relaySchedule = new RelaySchedule(this.node.deviceArray, (deviceID, scheduleIndex, relaySchedule, duration) => {
