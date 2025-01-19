@@ -249,7 +249,6 @@ setInterval(() => {
                         FILE_INI,
                         function (data) {
                             AiGrowJson = updateAiGrowJson(response, data);
-                            fertigateSchedule();
                         },
                         function (error) {
                             CF.ErrorLog("fertigation Can't read back up Ini.", error);
@@ -273,6 +272,7 @@ setInterval(() => {
 
                 if (AiGrowJson) {
                     printInfo(AiGrowJson);
+                    fertigateSchedule();
 
                     gpio.write(20, 1, (err) => {
                         if (err) CF.ErrorLog(`Error writing 1 to GPIO pin 20 `, err);
