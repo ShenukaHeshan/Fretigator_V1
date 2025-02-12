@@ -39,14 +39,17 @@ class SensorHandler {
     }
 
     checkSensorHealth(sensor) {
-        const variance = this.calculateVariance(sensor.deviceID);
-        const { MIN_VARIANCE } = SENSOR_CONFIG[sensor.type_id];
+        // Check if sensor handler is enabled
+        if (isSensorHandlerEnabled) {
+            const variance = this.calculateVariance(sensor.deviceID);
+            const { MIN_VARIANCE } = SENSOR_CONFIG[sensor.type_id];
 
-        if (variance < MIN_VARIANCE) {
-            this.disableAllSensorChecks();
-            CF.ErrorLog(`Sensor ${sensor.userSensorText}(${sensor.deviceID}) has low variance (${variance.toFixed(4)}) and may be malfunctioning.`);
-            sensor.sensorReadings = this.sensorData[sensor.deviceID];
-            this.handleSensorError(sensor);
+            if (variance < MIN_VARIANCE) {
+                this.disableAllSensorChecks();
+                CF.ErrorLog(`Sensor ${sensor.userSensorText}(${sensor.deviceID}) has low variance (${variance.toFixed(4)}) and may be malfunctioning.`);
+                sensor.sensorReadings = this.sensorData[sensor.deviceID];
+                this.handleSensorError(sensor);
+            }
         }
     }
 
@@ -80,12 +83,12 @@ class SensorHandler {
     }
 
     disableAllSensorChecks() {
-        Object.keys(this.sensorFlags).forEach(sensorID => {
+        Object.keys(this.sensorFlags).forEach((sensorID) => {
             this.sensorFlags[sensorID] = false;
         });
 
         // Clear and delete all sensor check timeouts
-        Object.keys(this.sensorCheckTimeouts).forEach(sensorId => {
+        Object.keys(this.sensorCheckTimeouts).forEach((sensorId) => {
             clearTimeout(this.sensorCheckTimeouts[sensorId]);
             delete this.sensorCheckTimeouts[sensorId];
         });

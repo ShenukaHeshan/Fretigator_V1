@@ -1,5 +1,5 @@
 const config = {
-  nodeId: 146,
+  nodeId: 146, // Kegalle Upper fertogator
 
   devices: {
     mixingPumpRelay: { deviceId: 31084, currentNodeId: 119 },
@@ -64,6 +64,9 @@ const config = {
     // PH
     phDosingDurationFactor: 10, // PH dosing duration factor
     phTurnOffThresholdFactor: 1, // PH turn off threshold factor
+
+    // Other
+    isSensorHandlerEnabled: false, // Enable sensor handler
   },
 };
 

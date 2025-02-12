@@ -45,7 +45,7 @@ global.mixingTankDrainLevel = 10;
 global.TURNON = 0;
 global.TURNOFF = 1;
 global.REFRESH_RATE = 100;
-global.FILE_INI = "/home/pi/AiGrow-Device-New/ini/fertigator.ini";
+global.FILE_INI = "/home/pi/AiGrow-Device/ini/fertigator.ini";
 
 // States
 global.DEFAULT_STATE = 0;
@@ -95,6 +95,9 @@ global.FINAL_CHECK_DELAY_TIME = config.other.finalCheckDelayTime;
 // PH
 global.PH_DOSING_DURATION_FACTOR = config.other.phDosingDurationFactor;
 global.PH_TURNOFF_THRESHOLD_FACTOR = config.other.phTurnOffThresholdFactor;
+
+// Other
+global.IS_SENSOR_HANDLER_ENABLED = config.other.isSensorHandlerEnabled;
 
 // Types
 global.VENTURI_TYPE = "venturi";
