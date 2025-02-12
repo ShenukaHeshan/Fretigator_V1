@@ -35,10 +35,10 @@ global.EC_VALUE = 0;
 global.PH_VALUE = 0;
 global.ecMv = 0;
 global.phMv = 0;
-global.targetEC = 0
-global.targetPH = 0
+global.targetEC = 0;
+global.targetPH = 0;
 global.EC_ERROR = false;
-global.freshWaterPumpStatus = 0
+global.freshWaterPumpStatus = 0;
 global.mixingTankDrainLevel = 10;
 
 // Constants
@@ -84,16 +84,23 @@ global.TANK_LEVEL_EXCEED = 3010;
 global.EC_LEVEL_EXCEED = 3011;
 
 // EC
-global.EC_REDUCE_TOLERANCE = 0.3; // Tolerance limit for switching to "EC reduce" state
-global.MAX_EC_REDUCTION_ROUNDS = 3; // maximum number of rounds allowed for EC reduce.
-global.EC_REDUCE_DRAIN_PERCENTAGE = 0.9; // Percentage of water to be drained for EC reduce.
-global.DOSING_PUMP_ML_PER_SECOND = 8; // Flow rate in milliliters per second in dosing Pump - using rate mode
+global.EC_REDUCE_TOLERANCE = config.other.ecReduceTolerance;
+global.MAX_EC_REDUCTION_ROUNDS = config.other.maxEcReductionRounds;
+global.EC_REDUCE_DRAIN_PERCENTAGE = config.other.ecReduceDrainPercentage;
+global.DOSING_PUMP_ML_PER_SECOND = config.other.dosingPumpMlPerSecond;
+global.REDUCED_DELAY_TIME = config.other.reducedDelayTime;
+global.STANDARD_DELAY_TIME = config.other.standardDelayTime;
+global.FINAL_CHECK_DELAY_TIME = config.other.finalCheckDelayTime; 
+
+// PH
+global.PH_DOSING_DURATION_FACTOR = config.other.phDosingDurationFactor;
+global.PH_TURNOFF_THRESHOLD_FACTOR = config.other.phTurnOffThresholdFactor;
 
 // Types
 global.VENTURI_TYPE = "venturi";
 global.DOSING_TYPE = "dosing";
-global.LOOP_TYPE= "loopTank";
-global.MIXING_TYPE= "mixingTank"; // mixingTank
+global.LOOP_TYPE = "loopTank";
+global.MIXING_TYPE = "mixingTank"; // mixingTank
 
 // Relay Controller
 global.ALLOFF = 0xff;
@@ -107,4 +114,3 @@ global.I2C_Busy = 0;
 
 // WebSocket
 global.PORT = 3001;
-

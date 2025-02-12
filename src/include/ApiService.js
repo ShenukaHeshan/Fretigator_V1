@@ -193,10 +193,16 @@ function sendRequest(formData, url, callback) {
         const baseResponse = { success: false, error: null };
 
         if (error) {
-            // Log network errors with date and time
-            console.error(`API Error ${url}`, error);
+            if (error.code === 'ESOCKETTIMEDOUT') {
+                // Skip logging for ESOCKETTIMEDOUT error
+            } else {
+                // Log errors
+                console.error(`API Error ${url}`, error);
+            }
+
             baseResponse.error = error.message || error;
             callback(baseResponse);
+
         } else if (response.statusCode === 200) {
             // Handle successful responses
             try {
