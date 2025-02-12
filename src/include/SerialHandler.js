@@ -94,17 +94,6 @@ class SerialHandler {
             CF.DebugLog(`Serial Data received. portPath : ${portPath}, data : ${data}`);
             this.callback(portPath, jsonData);
         } catch (err) {
-            CF.ErrorLog(`Serial Parsing error portPath : ${portPath}, data : ${data}`, err);
-        }
-    }
-
-    handleData(data, portPath) {
-        CF.SerialLog(portPath, data);
-        try {
-            const jsonData = JSON.parse(data);
-            CF.DebugLog(`Serial Data received. portPath : ${portPath}, data : ${data}`);
-            this.callback(portPath, jsonData);
-        } catch (err) {
             if (err instanceof SyntaxError) {
                 // JSON parsing error: Do nothing or log if necessary
                 // CF.ErrorLog is not called here
