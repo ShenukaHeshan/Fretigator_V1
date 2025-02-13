@@ -332,7 +332,8 @@ setInterval(() => {
                                     }
 
                                     mixingTankLevel = getSensorValue(AiGrowJson.current_node_id, mixingTankLevelSensorId);
-                                    AiGrowJson.freshWaterTankLevel = getSensorValue(AiGrowJson.current_node_id, freshwaterTankLevelSensorId);
+                                    // set freshWaterTankLevel to the maximum level, If it is 0 (Defailt 0)
+                                    AiGrowJson.freshWaterTankLevel = freshwaterTankLevelSensorId === 0 ? AiGrowJson.freshWaterTankMaxLevel : getSensorValue(AiGrowJson.current_node_id, freshwaterTankLevelSensorId);
 
                                     for (var i = 0; i < AiGrowJson.numberOfLoops; i++) {
                                         AiGrowJson.loopSchedules[i].localTankWaterLevel = getSensorValue(AiGrowJson.loopSchedules[i].listenTo_FM_LS_CurrentNodeID, AiGrowJson.loopSchedules[i].localTankWaterLevelDeviceID);
