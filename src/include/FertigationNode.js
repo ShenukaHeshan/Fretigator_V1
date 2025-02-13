@@ -76,7 +76,7 @@ class FertigationNode {
         }
     }
 
-    stopAll(){
+    stopAll() {
         this.relaySetArray = Array(12).fill(0);
         this.sendHeartBeat();
     }
@@ -93,7 +93,7 @@ class FertigationNode {
 
     userSet(deviceId, value) {
         const index = this.getRelayIndex(deviceId);
-        
+
         if (index > -1 && ["auto", "off", "on"].includes(value)) {
             // Process based on value
             if (value === "on") {
@@ -105,15 +105,15 @@ class FertigationNode {
                 this.relaySwitchExternalWrapper(deviceId, TURNOFF);
                 this.rescheduleRelay(this.node.deviceArray[index]);
             }
-            
+
             // Optional: Send a heartbeat if needed
             this.sendHeartBeat();
-    
+
         } else {
             CF.ErrorLog(`Invalid device ID ${deviceId} or value ${value}.`);
         }
     }
-    
+
 
     rescheduleRelay(device) {
         if (this.relaySchedule) {
