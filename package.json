@@ -1,6 +1,6 @@
 {
-  "name": "AiGrow-Fertigator",
-  "version": "1.5.0",
+  "name": "AiGrow Fertigator",
+  "version": "1.6.0",
   "description": "AiGrow-Fertigator",
   "main": "src/base.js",
   "type": "module",
@@ -29,5 +29,5 @@
     "i2c": "^0.2.5",
     "node-mcp23017": "^0.1.0",
     "coffee-script": "^1.12.7"
-}
+  }
 }

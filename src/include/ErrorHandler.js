@@ -5,7 +5,7 @@ import winston from "winston";
 class ErrorHandler {
   constructor(apiService, clearOnStart = false) {
     this.api = apiService;
-    this.errorLogPath = "error.log";
+    this.errorLogPath = "logs/error.log";
 
     // Initialize Winston logger
     this.logger = winston.createLogger({

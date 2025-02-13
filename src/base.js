@@ -55,8 +55,6 @@ var mqttInterval = setInterval(publishMqtt, 5000);
 setInterval(formatSensorData, 300000);
 
 // dosing variables
-const phDosingDurationFactor = 10;
-const phTurnOffThresholdFactor = 2;
 var ecReductionRound = 0;
 
 //flags
@@ -274,6 +272,8 @@ setInterval(() => {
                     printInfo(AiGrowJson);
                     fertigateSchedule();
 
+                    fertigateSchedule();
+
                     gpio.write(20, 1, (err) => {
                         if (err) CF.ErrorLog(`Error writing 1 to GPIO pin 20 `, err);
                     });
@@ -333,7 +333,8 @@ setInterval(() => {
                                     }
 
                                     mixingTankLevel = getSensorValue(AiGrowJson.current_node_id, mixingTankLevelSensorId);
-                                    AiGrowJson.freshWaterTankLevel = getSensorValue(AiGrowJson.current_node_id, freshwaterTankLevelSensorId);
+                                    // set freshWaterTankLevel to the maximum level, If it is 0 (Defailt 0)
+                                    AiGrowJson.freshWaterTankLevel = freshwaterTankLevelSensorId === 0 ? AiGrowJson.freshWaterTankMaxLevel : getSensorValue(AiGrowJson.current_node_id, freshwaterTankLevelSensorId);
 
                                     for (var i = 0; i < AiGrowJson.numberOfLoops; i++) {
                                         AiGrowJson.loopSchedules[i].localTankWaterLevel = getSensorValue(AiGrowJson.loopSchedules[i].listenTo_FM_LS_CurrentNodeID, AiGrowJson.loopSchedules[i].localTankWaterLevelDeviceID);
@@ -523,14 +524,14 @@ setInterval(() => {
                                 if (data.command == "USERSET") {
                                     const relayIndex = getRelayIndex(data.device_id);
                                     if (relayIndex == -1) return;
-                                
+
                                     const updateRelayDevice = (value, action) => {
                                         const relay = AigrowJson.deviceArray[relayIndex];
                                         relay.userInvolveValue = value;
                                         relay.userInvolveTime = new Date();
                                         relaySwitchExternalWrapper(relayIndex, action);
                                     };
-                                
+
                                     if (data.value == "on" && AiGrowJson.deviceArray[relayIndex].remoteEnable == 1) {
                                         updateRelayDevice(data.value, TURNON);
                                     } else if (data.value == "off" && AiGrowJson.deviceArray[relayIndex].remoteEnable == 1) {
@@ -540,20 +541,44 @@ setInterval(() => {
                                         relaySchedule.reschedule(AiGrowJson.deviceArray[relayIndex]);
                                     }
                                 } else if (data.command == "FERTIGATE") {
-                                    fertigationStart({ loopIndex: data.value, fertigationMode: "FERTIGATE", recipeId: data.recipeId, triggeredBy: "USER" });
+                                    fertigationStart({
+                                        loopIndex: data.value,
+                                        fertigationMode: "FERTIGATE",
+                                        recipeId: data.recipeId,
+                                        triggeredBy: "USER",
+                                    });
                                 } else if (data.command == "DRAIN") {
-                                    fertigationStart({ loopIndex: data.value, fertigationMode: "DRAIN", triggeredBy: "USER" });
+                                    fertigationStart({
+                                        loopIndex: data.value,
+                                        fertigationMode: "DRAIN",
+                                        triggeredBy: "USER",
+                                    });
                                 } else if (data.command == "FRESHWATER") {
-                                    fertigationStart({ loopIndex: data.value, fertigationMode: "FRESHWATER", triggeredBy: "USER" });
+                                    fertigationStart({
+                                        loopIndex: data.value,
+                                        fertigationMode: "FRESHWATER",
+                                        triggeredBy: "USER",
+                                    });
                                 } else if (data.command == "FERTIGATEWITHDRAIN") {
-                                    fertigationStart({ loopIndex: data.value, fertigationMode: "FERTIGATEWITHDRAIN", recipeId: data.recipeId, triggeredBy: "USER" });
+                                    fertigationStart({
+                                        loopIndex: data.value,
+                                        fertigationMode: "FERTIGATEWITHDRAIN",
+                                        recipeId: data.recipeId,
+                                        triggeredBy: "USER",
+                                    });
                                 } else if (data.command == "FRESHWATERWITHDRAIN") {
-                                    fertigationStart({ loopIndex: data.value, fertigationMode: "FRESHWATERWITHDRAIN", triggeredBy: "USER" });
+                                    fertigationStart({
+                                        loopIndex: data.value,
+                                        fertigationMode: "FRESHWATERWITHDRAIN",
+                                        triggeredBy: "USER",
+                                    });
                                 } else if (data.command == "STOP") {
                                     stopFertigation();
                                 } else if (data.command == "WRITE") {
                                     if (data.value == TURNON || data.value == TURNOFF) {
-                                        node.relaySwitchExternalWrapper(data.device_id, data.value);
+                                        const relayIndex = getRelayIndex(data.device_id);
+                                        if (relayIndex == -1) return;
+                                        relaySwitchExternalWrapper(relayIndex, data.value);
                                     }
                                 } else if ("GETMQTT") {
                                     clearInterval(mqttInterval);
@@ -622,7 +647,12 @@ setInterval(() => {
                 const status = AiGrowJson.status?.[0];
                 if (status && status.STATE > IDLE_STATE && ![ERROR_STATE, SAFETY_CHECK].includes(status.STATE)) {
                     if (status.mode !== undefined && status.currentLoop != null && status.recipeId != null) {
-                        fertigationStart({ loopIndex: status.currentLoop, fertigationMode: status.mode, recipeId: status.recipeId, triggeredBy: "POWER ON" });
+                        fertigationStart({
+                            loopIndex: status.currentLoop,
+                            fertigationMode: status.mode,
+                            recipeId: status.recipeId,
+                            triggeredBy: "POWER ON",
+                        });
                     } else {
                         CURRENT_STATE = IDLE_STATE;
                     }
@@ -733,7 +763,6 @@ setInterval(() => {
         if (!fillWaterStateFlag) {
             fillWaterStateFlag = true;
             if (getCurrentLevel() < targetLevel) {
-
                 sensorHandler.enableSensorCheck(mixingTankLevelSensorId);
 
                 relayOnValueChecker(freshWaterSolenoidRelay, TURNON, function (freshWaterSolenoidRelayState) {
@@ -1616,6 +1645,7 @@ process.on("SIGUSR2", exitHandler);
 // catches uncaught exceptions
 process.on("uncaughtException", exitHandler);
 
+// Rate Mode
 function rateControlledDosing(rateList) {
     rateModeDone = false;
     dosingBusy = true;
@@ -1667,6 +1697,7 @@ function rateControlledDosing(rateList) {
     }
 }
 
+// Time Mode
 function timeControlledDosing(timeSteps) {
     timeModeDone = false;
     dosingBusy = true;
@@ -1718,6 +1749,7 @@ function timeControlledDosing(timeSteps) {
     }
 }
 
+// Ratio Mode
 function ratioControlledDosing(ratioSteps, setEC) {
     ratioModeDone = false;
     dosingBusy = true;
@@ -1767,7 +1799,7 @@ function ratioControlledDosing(ratioSteps, setEC) {
 
             const device = {
                 deviceId: tank.device_id,
-                currentNodeId: tank.current_node_id
+                currentNodeId: tank.current_node_id,
             };
 
             relayOnValueChecker(device, TURNON, (relayFeedBack) => {
@@ -1785,9 +1817,12 @@ function ratioControlledDosing(ratioSteps, setEC) {
                 if (index > -1) dosingInterval.splice(index, 1);
 
                 if (ratioSteps.every((step) => step.isCompleted)) {
-                    delay(2000).then(() => {
+                    const currentLevel = getCurrentLevel();
+                    const delayTime = currentLevel < 100 ? REDUCED_DELAY_TIME : STANDARD_DELAY_TIME;
+
+                    delay(delayTime).then(() => {
                         if (setEC - EC_VALUE < 0.5) {
-                            delay(8000).then(() => (dosingBusy = false));
+                            delay(FINAL_CHECK_DELAY_TIME).then(() => (dosingBusy = false));
                         } else {
                             dosingBusy = false;
                         }
@@ -1815,6 +1850,7 @@ function ratioControlledDosing(ratioSteps, setEC) {
     }
 }
 
+// Ec
 function ecControlledDosing(ecSteps) {
     ecModeDone = false;
     dosingBusy = true;
@@ -1857,7 +1893,7 @@ function ecControlledDosing(ecSteps) {
 
             const device = {
                 deviceId: tank.device_id,
-                currentNodeId: tank.current_node_id
+                currentNodeId: tank.current_node_id,
             };
 
             relayOnValueChecker(device, TURNON, (relayFeedback) => {
@@ -1872,14 +1908,16 @@ function ecControlledDosing(ecSteps) {
                 const index = dosingInterval.indexOf(dosingTimeout);
                 if (index > -1) dosingInterval.splice(index, 1);
 
-                delay(2000).then(() => {
+                const currentLevel = getCurrentLevel();
+                const delayTime = currentLevel < 100 ? REDUCED_DELAY_TIME : STANDARD_DELAY_TIME;
+
+                delay(delayTime).then(() => {
                     if (targetEC - EC_VALUE < 0.5) {
-                        delay(8000).then(() => (dosingBusy = false));
+                        delay(FINAL_CHECK_DELAY_TIME).then(() => (dosingBusy = false));
                     } else {
                         dosingBusy = false;
                     }
                 });
-
             }, dosingDuration);
 
             dosingInterval.push(dosingTimeout);
@@ -1906,6 +1944,7 @@ function ecControlledDosing(ecSteps) {
     }
 }
 
+// PH
 function phControlledDosing(step) {
     phModeDone = false;
 
@@ -1943,7 +1982,7 @@ function phControlledDosing(step) {
 }
 
 function dosingPumpBase(value, different) {
-    if (different <= 0) different = 1;
+    if (different < 5) different = 1;
 
     if (!dosingBusy) {
         dosingBusy = true;
@@ -1960,7 +1999,7 @@ function dosingPumpBase(value, different) {
             });
 
             // Start the timer for dosing duration
-            const dosingTime = different * phDosingDurationFactor;
+            const dosingTime = different * PH_DOSING_DURATION_FACTOR;
             secondsTimer(
                 dosingTime,
                 function () {
@@ -1971,7 +2010,7 @@ function dosingPumpBase(value, different) {
                         clearInterval(interval);
                         return;
                     }
-                    if (remainingTime <= dosingTime / phTurnOffThresholdFactor) {
+                    if (remainingTime < dosingTime / PH_TURNOFF_THRESHOLD_FACTOR) {
                         relayOnValueChecker(device, TURNOFF, function (relayFeedback) {
                             CF.Log(`Mode: BASE 1, Node ID: ${device.currentNodeId}, Device ID: ${device.deviceId}, Value: ${TURNOFF}, Feedback: ${relayFeedback}`);
                         });
@@ -1987,7 +2026,7 @@ function dosingPumpBase(value, different) {
 }
 
 function dosingPumpAcid(value, different) {
-    if (different <= 0) different = 1;
+    if (different < 5) different = 1;
 
     if (!dosingBusy) {
         dosingBusy = true;
@@ -2004,7 +2043,7 @@ function dosingPumpAcid(value, different) {
             });
 
             // Start the timer for dosing duration
-            const dosingTime = different * phDosingDurationFactor;
+            const dosingTime = different * PH_DOSING_DURATION_FACTOR;
             secondsTimer(
                 dosingTime,
                 function () {
@@ -2015,7 +2054,7 @@ function dosingPumpAcid(value, different) {
                         clearInterval(interval);
                         return;
                     }
-                    if (remainingTime <= dosingTime / phTurnOffThresholdFactor) {
+                    if (remainingTime < dosingTime / PH_TURNOFF_THRESHOLD_FACTOR) {
                         relayOnValueChecker(device, TURNOFF, function (relayFeedback) {
                             CF.Log(`Mode: ACID 1, Node ID: ${device.currentNodeId}, Device ID: ${device.deviceId}, Value: ${TURNOFF}, Feedback: ${relayFeedback}`);
                         });
@@ -2033,22 +2072,13 @@ function dosingPumpAcid(value, different) {
 function handleError(errorCode, data = {}) {
     const logError = (message, errorDetails = {}) => {
         CF.ErrorLog(message);
-        errorHandler.logError(
-            AiGrowJson.current_node_id,
-            CURRENT_STATE,
-            stateTimer,
-            errorCode,
-            message,
-            "N/A",
-            false,
-            errorDetails
-        );
+        errorHandler.logError(AiGrowJson.current_node_id, CURRENT_STATE, stateTimer, errorCode, message, "N/A", false, errorDetails);
     };
 
     let message = "Unknown error occurred. Please contact AiGrow.";
     switch (errorCode) {
         case SENSOR_ERROR:
-            message = `${data.sensor.userSensorText} sensor(${data.sensor.deviceID}) is reporting low variance. Fertigation will stop.`;
+            message = `${data.sensor.userSensorText} sensor (${data.sensor.deviceID}) is reporting low variance. Fertigation will stop.`;
             logError(message, data);
             CURRENT_STATE = ERROR_STATE;
             break;
@@ -2081,7 +2111,7 @@ function handleError(errorCode, data = {}) {
             break;
 
         case TANK_LEVEL_EXCEED:
-            message = `Fertigation cycle canceled. The current tank level (${data.currentTankLevel} l) exceeds 90% of the set level. Please adjust the tank level and restart the cycle.`;
+            message = `The current tank level (${data.currentTankLevel} l) exceeds 90% of the set level (${data.setTankLevel} l). The cycle will automatically drain before starting fertigation.`;
             logError(message, data);
             break;
 
@@ -2155,7 +2185,7 @@ function relayOnValueChecker(device, value, callback, currentState = CURRENT_STA
                     }
                 }
 
-                if (count > 20 && externalNode.isSerialActive() && CURRENT_STATE != SAFETY_CHECK) {
+                if (count > 40 && externalNode.isSerialActive() && CURRENT_STATE != SAFETY_CHECK) {
                     clearInterval(interval);
                     callback(false);
 
@@ -2377,7 +2407,13 @@ function fertigationStart({ loopIndex, fertigationMode, recipeId = 0, triggeredB
     }
 
     function addToRemainingCycle() {
-        const fertigationData = { loopIndex, fertigationMode, recipeId, triggeredBy, tankLevel };
+        const fertigationData = {
+            loopIndex,
+            fertigationMode,
+            recipeId,
+            triggeredBy,
+            tankLevel,
+        };
         remainingFertigationCycle.push(fertigationData);
 
         if (!addToRemainingCycle.interval) {
@@ -2405,12 +2441,17 @@ function fertigationStart({ loopIndex, fertigationMode, recipeId = 0, triggeredB
 
         // Set state based on mode
         if (fertigationMode === "FERTIGATE" || fertigationMode === "FRESHWATER") {
-            // Check if the tank level exceeds the 90% of the set level
-            // if (fertigationCycleData.startTankLevel > 0.9 * setTankLevel) {
-            //     handleError(TANK_LEVEL_EXCEED, { currentTankLevel: fertigationCycleData.startTankLevel, setTankLevel: setTankLevel });
-            //     return;
-            // }
-            CURRENT_STATE = PRE_FERTIGATE_STATE;
+            // Check if the tank level exceeds 90% of the set level
+            if (fertigationCycleData.startTankLevel > 0.9 * setTankLevel) {
+                handleError(TANK_LEVEL_EXCEED, { currentTankLevel: fertigationCycleData.startTankLevel, setTankLevel: setTankLevel });
+                if (AiGrowJson.majorVersion == MIXING_TYPE) {
+                    CURRENT_STATE = EMPTY_MIXING_TANK;
+                } else if (AiGrowJson.majorVersion == LOOP_TYPE) {
+                    CURRENT_STATE = DRAIN_TANK;
+                }
+            } else {
+                CURRENT_STATE = PRE_FERTIGATE_STATE;
+            }
         } else if (["DRAIN", "FERTIGATEWITHDRAIN", "FRESHWATERWITHDRAIN"].includes(fertigationMode)) {
             if (AiGrowJson.majorVersion == MIXING_TYPE) {
                 CURRENT_STATE = EMPTY_MIXING_TANK;
@@ -2525,7 +2566,6 @@ function stopFertigation() {
             });
         }
 
-
         const safetyFlag = new Array(AiGrowJson.loopSchedules.length).fill(0);
         AiGrowJson.loopSchedules.forEach((loop, index) => {
             loopDrainPumpEnable(index, TURNOFF, function (relayFeedback) {
@@ -2608,7 +2648,6 @@ function safetyStopAll({ isExit = false, action, state = IDLE_STATE }) {
                 });
             });
         }
-
 
         const safetyFlag = new Array(AiGrowJson.loopSchedules.length).fill(0);
         AiGrowJson.loopSchedules.forEach((loop, index) => {
@@ -2854,19 +2893,41 @@ function fertigateSchedule() {
         loop.MultiRecipeSchedulelist.forEach((loopSchedule, scheduleIndex) => {
             if (!loopSchedule) return;
 
+            // Get the CRON expression from the schedule list
+            const cronExpression = loopSchedule.Schedule; // Schedule is the CRON expression
             const fertigationMode = loopSchedule.startWithDrain ? "FERTIGATEWITHDRAIN" : "FERTIGATE";
-            scheduleList[scheduleIndex] = schedule.scheduleJob(loopSchedule.Schedule, () => {
-                console.log(colors.black.bgGreen(`Fertigation triggered by schedule. Name: ${loopSchedule.ScheduleName} Mode: ${fertigationMode}, , cron: ${loopSchedule.Schedule}`));
-                fertigationStart({ loopIndex, fertigationMode, recipeId: loopSchedule.RecepeGroudId, triggeredBy: "SCHEDULE", tankLevel: loopSchedule.tankLevel });
+
+            // Create the schedule job
+            scheduleList[scheduleIndex] = schedule.scheduleJob(cronExpression, () => {
+                console.log(colors.black.bgGreen(`Fertigation triggered by schedule. Name: ${loopSchedule.ScheduleName} Mode: ${fertigationMode}, cron: ${cronExpression}`));
+                fertigationStart({
+                    loopIndex,
+                    fertigationMode,
+                    recipeId: loopSchedule.RecepeGroudId,
+                    triggeredBy: "SCHEDULE",
+                    tankLevel: loopSchedule.tankLevel,
+                });
             });
+
+            // Print the schedule details, including next invocation
+            console.log(`LoopIndex: ${loopIndex}`);
+            console.log(`  Schedule ${scheduleIndex}:`);
+            console.log(`    CRON Expression: ${cronExpression}`);
+            console.log(`    Next run at: ${scheduleList[scheduleIndex].nextInvocation()}`);
+            console.log(`    Active: Yes`);
         });
 
+        // Store the list of active fertigate schedules for this loop
         fertigateScheduleList[loopIndex] = scheduleList;
 
-        // Set drain schedule
+        // Set drain schedule (if any)
         if (loop.drainSchedule) {
             loopDrainScheduleList[loopIndex] = schedule.scheduleJob(loop.drainSchedule, () => {
-                fertigationStart({ loopIndex, fertigationMode: "DRAIN", triggeredBy: "SCHEDULE" });
+                fertigationStart({
+                    loopIndex,
+                    fertigationMode: "DRAIN",
+                    triggeredBy: "SCHEDULE",
+                });
                 console.log(colors.black.bgGreen(`Drain triggered by schedule.`));
             });
         }
@@ -2881,19 +2942,49 @@ function handleFertigationCommand(jsonOut) {
 
     switch (jsonOut.Command) {
         case "FERTIGATE":
-            fertigationStart({ loopIndex: loopIndex, fertigationMode: "FERTIGATE", recipeId: recipeId, triggeredBy: "DISPLAY", tankLevel: tankSetValue });
+            fertigationStart({
+                loopIndex: loopIndex,
+                fertigationMode: "FERTIGATE",
+                recipeId: recipeId,
+                triggeredBy: "DISPLAY",
+                tankLevel: tankSetValue,
+            });
             break;
         case "FRESHWATER":
-            fertigationStart({ loopIndex: loopIndex, fertigationMode: "FRESHWATER", recipeId: recipeId, triggeredBy: "DISPLAY", tankLevel: tankSetValue });
+            fertigationStart({
+                loopIndex: loopIndex,
+                fertigationMode: "FRESHWATER",
+                recipeId: recipeId,
+                triggeredBy: "DISPLAY",
+                tankLevel: tankSetValue,
+            });
             break;
         case "DRAIN":
-            fertigationStart({ loopIndex: loopIndex, fertigationMode: "DRAIN", recipeId: recipeId, triggeredBy: "DISPLAY", tankLevel: tankSetValue });
+            fertigationStart({
+                loopIndex: loopIndex,
+                fertigationMode: "DRAIN",
+                recipeId: recipeId,
+                triggeredBy: "DISPLAY",
+                tankLevel: tankSetValue,
+            });
             break;
         case "FERTIGATEWITHDRAIN":
-            fertigationStart({ loopIndex: loopIndex, fertigationMode: "FERTIGATEWITHDRAIN", recipeId: recipeId, triggeredBy: "DISPLAY", tankLevel: tankSetValue });
+            fertigationStart({
+                loopIndex: loopIndex,
+                fertigationMode: "FERTIGATEWITHDRAIN",
+                recipeId: recipeId,
+                triggeredBy: "DISPLAY",
+                tankLevel: tankSetValue,
+            });
             break;
         case "FRESHWATERWITHDRAIN":
-            fertigationStart({ loopIndex: loopIndex, fertigationMode: "FRESHWATERWITHDRAIN", recipeId: recipeId, triggeredBy: "DISPLAY", tankLevel: tankSetValue });
+            fertigationStart({
+                loopIndex: loopIndex,
+                fertigationMode: "FRESHWATERWITHDRAIN",
+                recipeId: recipeId,
+                triggeredBy: "DISPLAY",
+                tankLevel: tankSetValue,
+            });
             break;
         case "STOP":
             stopFertigation();
