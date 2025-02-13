@@ -1,4 +1,4 @@
-import config from "../../config/config-default.js";
+import config from "../../config/config.js";
 
 // Assign NODE_ID
 global.NODE_ID = config.nodeId;

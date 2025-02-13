@@ -40,7 +40,7 @@ class SensorHandler {
 
     checkSensorHealth(sensor) {
         // Check if sensor handler is enabled
-        if (isSensorHandlerEnabled) {
+        if (IS_SENSOR_HANDLER_ENABLED) {
             const variance = this.calculateVariance(sensor.deviceID);
             const { MIN_VARIANCE } = SENSOR_CONFIG[sensor.type_id];
 

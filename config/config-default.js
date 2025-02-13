@@ -63,7 +63,7 @@ const config = {
 
     // PH
     phDosingDurationFactor: 10, // PH dosing duration factor
-    phTurnOffThresholdFactor: 1, // PH turn off threshold factor
+    phTurnOffThresholdFactor: 2, // PH turn off threshold factor
 
     // Other
     isSensorHandlerEnabled: false, // Enable sensor handler
