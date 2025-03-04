@@ -69,8 +69,8 @@ class LogHandler {
     };
 
     // Log the error in both log files
-    this.logger.error(JSON.stringify(formData, null, 2)); // Logs in system-%DATE%.log
-    this.errorLogger.error(JSON.stringify(formData, null, 2)); // Logs in system-error.log
+    this.logger.error(JSON.stringify(formData)); // Logs in system-%DATE%.log
+    this.errorLogger.error(JSON.stringify(formData)); // Logs in system-error.log
 
     // API call to report the error (uncomment if needed)
     this.api.logError(formData, (isSuccess) => { });
@@ -86,7 +86,7 @@ class LogHandler {
     };
 
     // Log the message with data
-    this.logger.info(JSON.stringify(logData, null, 2));
+    this.logger.info(JSON.stringify(logData));
   }
 
   logError(message, data = {}) {
