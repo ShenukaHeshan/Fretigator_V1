@@ -9,7 +9,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import "./include/constants.js";
 import ApiService from "./include/ApiService.js";
 import SerialHandler from "./include/SerialHandler.js";
-import ErrorHandler from "./include/ErrorHandler.js";
+import LogHandler from "./include/LogHandler.js";
 import SensorHandler from "./include/SensorHandler.js";
 import VenturiHandler from "./include/VenturiHandler.js";
 import relayDrive from "./include/RelayController.js";
@@ -25,7 +25,7 @@ let sensorHandler;
 let relaySchedule;
 let apiService = new ApiService(NODE_ID);
 let serialHandler = new SerialHandler();
-let errorHandler = new ErrorHandler(apiService, true);
+let logHandler = new LogHandler(apiService, true);
 CF.setDebugMode(false);
 
 //variables
@@ -146,7 +146,7 @@ wss.on("connection", (ws) => {
     ws.on("message", (message) => {
         try {
             const data = JSON.parse(message);
-            console.log("WebSocket message received:", data);
+            logHandler.logInfo("WebSocket message received.", data);
 
             // Handle commands
             switch (data.command) {
@@ -241,6 +241,7 @@ setInterval(() => {
         CF.CurrentStateLog("POWER_ON_STATE", stateTimer);
         if (!powerOnFlag) {
             powerOnFlag = true;
+            logHandler.logInfo("Fertigation System Powered On.");
             apiService.getNodeINIAiGrow((response) => {
                 if (response && response.success) {
                     fileHandler.readFile(
@@ -270,8 +271,6 @@ setInterval(() => {
 
                 if (AiGrowJson) {
                     printInfo(AiGrowJson);
-                    fertigateSchedule();
-
                     fertigateSchedule();
 
                     gpio.write(20, 1, (err) => {
@@ -520,6 +519,7 @@ setInterval(() => {
                         AiGrowJson,
                         //handle mqtt message
                         function (data) {
+                            logHandler.logInfo("Mqtt message received.", data);
                             if (data.targetCurrentNodeID == AiGrowJson.current_node_id) {
                                 if (data.command == "USERSET") {
                                     const relayIndex = getRelayIndex(data.device_id);
@@ -1613,7 +1613,7 @@ setInterval(() => {
     }
 
     // Alarm
-    if (errorHandler.hasErrorsInLog()) {
+    if (logHandler.hasErrorsInLog()) {
         gpio.write(11, 0, (err) => {
             if (err) throw err;
         });
@@ -2072,7 +2072,7 @@ function dosingPumpAcid(value, different) {
 function handleError(errorCode, data = {}) {
     const logError = (message, errorDetails = {}) => {
         CF.ErrorLog(message);
-        errorHandler.logError(AiGrowJson.current_node_id, CURRENT_STATE, stateTimer, errorCode, message, "N/A", false, errorDetails);
+        logHandler.systemError(AiGrowJson.current_node_id, CURRENT_STATE, stateTimer, errorCode, message, "N/A", false, errorDetails);
     };
 
     let message = "Unknown error occurred. Please contact AiGrow.";
@@ -2389,6 +2389,9 @@ function getLongestPostStageRelaySettings() {
 }
 
 function fertigationStart({ loopIndex, fertigationMode, recipeId = 0, triggeredBy, tankLevel }) {
+
+    logHandler.logInfo("Fertigation Started", { loopIndex, fertigationMode, recipeId, triggeredBy, tankLevel });
+
     function initializeFertigationCycleData() {
         const loop = AiGrowJson.loopSchedules[currentLoopIndex];
         fertigationCycleData.start = dateFormat(new Date(), "yyyy/mm/dd HH:MM:ss TT");
@@ -2899,22 +2902,25 @@ function fertigateSchedule() {
 
             // Create the schedule job
             scheduleList[scheduleIndex] = schedule.scheduleJob(cronExpression, () => {
-                console.log(colors.black.bgGreen(`Fertigation triggered by schedule. Name: ${loopSchedule.ScheduleName} Mode: ${fertigationMode}, cron: ${cronExpression}`));
+                const triggerDetails = {
+                    name: loopSchedule.ScheduleName,
+                    mode: fertigationMode,
+                    cron: cronExpression,
+                    recipeId: loopSchedule.RecepeGroudId,
+                    tankLevel: loopSchedule.tankLevel,
+                };
+
+                logHandler.logInfo("Fertigation triggered by schedule.", triggerDetails);
+                console.log(colors.black.bgGreen(`Fertigation triggered: ${JSON.stringify(triggerDetails)}`));
+
                 fertigationStart({
                     loopIndex,
                     fertigationMode,
-                    recipeId: loopSchedule.RecepeGroudId,
+                    recipeId: triggerDetails.recipeId,
                     triggeredBy: "SCHEDULE",
-                    tankLevel: loopSchedule.tankLevel,
+                    tankLevel: triggerDetails.tankLevel,
                 });
             });
-
-            // Print the schedule details, including next invocation
-            console.log(`LoopIndex: ${loopIndex}`);
-            console.log(`  Schedule ${scheduleIndex}:`);
-            console.log(`    CRON Expression: ${cronExpression}`);
-            console.log(`    Next run at: ${scheduleList[scheduleIndex].nextInvocation()}`);
-            console.log(`    Active: Yes`);
         });
 
         // Store the list of active fertigate schedules for this loop
@@ -2928,6 +2934,7 @@ function fertigateSchedule() {
                     fertigationMode: "DRAIN",
                     triggeredBy: "SCHEDULE",
                 });
+                logHandler.logInfo("Drain triggered by schedule.");
                 console.log(colors.black.bgGreen(`Drain triggered by schedule.`));
             });
         }
