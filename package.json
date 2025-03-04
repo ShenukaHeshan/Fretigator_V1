@@ -1,6 +1,6 @@
 {
   "name": "AiGrow Fertigator",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "AiGrow-Fertigator",
   "main": "src/base.js",
   "type": "module",
