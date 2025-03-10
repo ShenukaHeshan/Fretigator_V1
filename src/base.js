@@ -2078,7 +2078,7 @@ function handleError(errorCode, data = {}) {
     let message = "Unknown error occurred. Please contact AiGrow.";
     switch (errorCode) {
         case SENSOR_ERROR:
-            message = `${data.sensor.userSensorText} sensor (${data.sensor.deviceID}) is reporting low variance. Fertigation will stop.`;
+            message = `${data.sensor.userSensorText} sensor (ID: ${data.sensor.deviceID}) is reporting low variance. This may cause the fertigation process to stop.`;
             logError(message, data);
             CURRENT_STATE = ERROR_STATE;
             break;
@@ -2105,7 +2105,7 @@ function handleError(errorCode, data = {}) {
 
             if (foundDevice) {
                 const action = data.value == TURNON ? "On" : "Off";
-                const message = `Device ${foundDevice.userSensorText}(${foundDevice.deviceID}) can't power ${action}. Fertigation will stop.`;
+                const message = `The ${foundDevice.userSensorText} (ID: ${foundDevice.deviceID}) is not powering ${action}. This may cause the fertigation process to stop. Please check the device.`;
                 logError(message, { device: foundDevice });
             }
             break;
