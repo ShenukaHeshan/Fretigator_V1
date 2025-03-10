@@ -79,8 +79,6 @@ class LogHandler {
   // Function to log informational messages
   logInfo(message, data = {}) {
     const logData = {
-      timestamp: new Date().toISOString(),
-      level: "info",
       message,
       data,
     };
@@ -91,8 +89,6 @@ class LogHandler {
 
   logError(message, data = {}) {
     const logData = {
-      timestamp: new Date().toISOString(),
-      level: "error",
       message,
       data,
     };
